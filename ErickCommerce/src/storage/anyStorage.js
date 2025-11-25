@@ -1,68 +1,102 @@
-// src/storage/anyStorage.js
 
-// ======================
-// LIXEIRA (já existia)
-// ======================
-const DELETED_KEY = "deleted_products_v1";
+const ADMIN_USER = {
+    username: "Erick",
+    password: "123",
+    role: "admin"
+  };
+  
 
-// retorna lista de IDs deletados
-export function getDeletedProducts() {
-  return JSON.parse(localStorage.getItem(DELETED_KEY) || "[]");
-}
+  export function getUsers() {
+    return JSON.parse(localStorage.getItem("users") || "[]");
+  }
+  
+  export function saveUsers(users) {
+    localStorage.setItem("users", JSON.stringify(users));
+  }
+  
+  
+  export function createUser(username, password) {
+    const users = getUsers();
+  
+    if (users.find(u => u.username === username)) {
+      return { error: "Nome de usuário já existe." };
+    }
+  
+    const newUser = {
+      username,
+      password,
+      cart: []
+    };
+  
+    users.push(newUser);
+    saveUsers(users);
+  
+    return { success: true };
+  }
+  
 
-// adiciona um ID à lixeira
-export function addDeletedProduct(id) {
-  const list = getDeletedProducts();
-  const newList = [...new Set([...list, id])];
-  localStorage.setItem(DELETED_KEY, JSON.stringify(newList));
-}
+  export function loginUser(username, password) {
+  
+    if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
+      localStorage.setItem("currentUser", JSON.stringify(ADMIN_USER));
+      return { success: true, admin: true };
+    }
+  
+  
+    const users = getUsers();
+    const user = users.find(
+      u => u.username === username && u.password === password
+    );
+  
+    if (!user) return { error: "Usuário ou senha inválidos." };
+  
+    localStorage.setItem("currentUser", JSON.stringify(user));
+  
+    return { success: true, admin: false };
+  }
+  
 
-// remove da lixeira
-export function restoreProduct(id) {
-  const list = getDeletedProducts().filter((x) => x !== id);
-  localStorage.setItem(DELETED_KEY, JSON.stringify(list));
-}
+  export function getCurrentUser() {
+    return JSON.parse(localStorage.getItem("currentUser") || "null");
+  }
+  
+  export function logoutUser() {
+    localStorage.removeItem("currentUser");
+  }
+  
 
-export function isDeleted(id) {
-  return getDeletedProducts().includes(id);
-}
-
-
-
-// ======================
-// SISTEMA DE USUÁRIOS
-// ======================
-const USERS_KEY = "users_db_v1";
-const LOGGED_KEY = "user_logged_v1";
-
-// lista de usuários
-export function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-}
-
-// adiciona um usuário
-export function addUser(user) {
-  const users = getUsers();
-  users.push(user);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-// salva usuário logado
-export function setLoggedUser(user) {
-  localStorage.setItem(LOGGED_KEY, JSON.stringify(user));
-}
-
-// retorna usuário logado
-export function getLoggedUser() {
-  return JSON.parse(localStorage.getItem(LOGGED_KEY) || "null");
-}
-
-// logout
-export function logoutUser() {
-  localStorage.removeItem(LOGGED_KEY);
-}
-
-// verifica login
-export function isUserLogged() {
-  return Boolean(localStorage.getItem(LOGGED_KEY));
-}
+  export function getUserCart(username) {
+    if (username === "Erick") return [];
+  
+    const users = getUsers();
+    const user = users.find(u => u.username === username);
+  
+    return user ? user.cart || [] : [];
+  }
+  
+  export function saveUserCart(username, cart) {
+    if (username === "Erick") return;
+  
+    const users = getUsers();
+    const user = users.find(u => u.username === username);
+  
+    if (user) {
+      user.cart = cart;
+      saveUsers(users);
+    }
+  }
+  
+  export function getActiveCart() {
+    const current = getCurrentUser();
+    if (!current) return [];
+  
+    return getUserCart(current.username);
+  }
+  
+  export function saveActiveCart(cart) {
+    const current = getCurrentUser();
+    if (!current) return;
+  
+    saveUserCart(current.username, cart);
+  }
+  
